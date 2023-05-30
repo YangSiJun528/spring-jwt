@@ -12,6 +12,7 @@ import java.util.function.Function;
 
 @Component
 @RequiredArgsConstructor
+//TODO JwtData에 있는 필수 정보 + 추가 클레임 정보 + JwtEnvironment 값을 기준으로 JWT 생성
 public class JwtManager {
     private static final String ROLE = "roles";
     private final JwtEnvironment env;
