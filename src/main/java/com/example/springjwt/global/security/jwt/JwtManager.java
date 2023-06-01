@@ -71,25 +71,16 @@ public class JwtManager {
         return jwtBuilder.signWith(getSignInKey(), SignatureAlgorithm.HS256).compact();
     }
 
-    public boolean validate(String token) throws JwtException {
-        Jwts
-                .parserBuilder()
-                .requireIssuer(env.issuer())
-                .setSigningKey(getSignInKey())
-                .build()
-                .parseClaimsJws(token);
-        return true;
-    }
-
     /**
-     * 주어진 JWT 토큰에서 모든 클레임 값을 추출합니다.
+     * 주어진 JWT 토큰에서 모든 클레임을 추출합니다.
      *
-     * @param token 추출할 JWT 토큰
+     * @param token 클레임을 추출할 JWT 토큰
      * @return JWT 토큰에서 추출한 모든 클레임
+     * @throws JwtException JWT 변환에 실패한 경우 발생
      */
-    private Claims extractAllClaims(String token) {
-        return Jwts
-                .parserBuilder()
+    private Claims extractAllClaims(String token) throws JwtException {
+        return Jwts.parserBuilder()
+                .requireIssuer(env.issuer())
                 .setSigningKey(getSignInKey())
                 .build()
                 .parseClaimsJws(token)
@@ -112,7 +103,7 @@ public class JwtManager {
      * @param token 검사할 JWT 토큰
      * @return JWT 토큰의 만료일
      */
-    private Date extractExpiration(String token) {
+    public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
 
@@ -122,7 +113,7 @@ public class JwtManager {
      * @param token 검사할 JWT 토큰
      * @return JWT 토큰의 만료일
      */
-    private Set<String> extractRoles(String token) {
+    public Set<String> extractRoles(String token) {
         return extractClaim(token, (claims)-> (Set<String>) claims.get(ROLE));
     }
 
@@ -132,7 +123,7 @@ public class JwtManager {
      * @param token 검사할 JWT 토큰
      * @return JWT 토큰의 만료일
      */
-    private String extractSubject(String token) {
+    public String extractSubject(String token) {
         return (String) extractClaim(token, (claims)-> claims.get(ROLE));
     }
 
@@ -144,7 +135,7 @@ public class JwtManager {
      * @param <T>            추출할 클레임 정보의 타입
      * @return 추출된 클레임 정보
      */
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+    private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
