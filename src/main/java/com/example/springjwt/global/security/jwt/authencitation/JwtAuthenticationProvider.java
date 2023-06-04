@@ -1,19 +1,20 @@
-package com.example.springjwt.global.security.jwt;
+package com.example.springjwt.global.security.jwt.authencitation;
 
+import com.example.springjwt.global.security.jwt.data.JwtInvalidException;
+import com.example.springjwt.global.security.jwt.JwtManager;
 import io.jsonwebtoken.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 
+@Component
 @RequiredArgsConstructor
 public class JwtAuthenticationProvider implements AuthenticationProvider {
-
-    private final String KEY_ROLES = "roles";
-
     private final JwtManager jwtManager;
 
     private Collection<? extends GrantedAuthority> createGrantedAuthorities(Set<String> roles) {
@@ -34,9 +35,11 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String subject;
         Set<String> roles;
+        Claims allClaims;
         try {
             String accessToken = ((JwtAuthenticationToken) authentication).getAccessToken();
             subject = jwtManager.extractSubject(accessToken);
+            allClaims = jwtManager.extractAllClaims(accessToken);
             roles = jwtManager.extractRoles(accessToken);
         } catch (SignatureException signatureException) {
             throw new JwtInvalidException("서명 키가 다릅니다", signatureException);
@@ -47,7 +50,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
         } catch (IllegalArgumentException illegalArgumentException) {
             throw new JwtInvalidException("null과 같은 잘못된 인수를 사용했습니다", illegalArgumentException);
         }
-        return new JwtAuthenticationToken(subject, "", createGrantedAuthorities(roles));
+        return new JwtAuthenticationToken(subject, allClaims, createGrantedAuthorities(roles));
     }
 
     @Override

@@ -1,4 +1,7 @@
-package com.example.springjwt.global.security.jwt;
+package com.example.springjwt.global.security.jwt.repository;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -6,22 +9,24 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Component
+@RequiredArgsConstructor
 public class MapRefreshTokenRepository implements RefreshTokenRepository<String, String> {
     Map<String, String> db = new HashMap<>(Collections.emptyMap());
 
     @Override
-    public void save(String id, String refreshToken) {
-        db.put(id, refreshToken);
+    public void save(String subject, String refreshToken) {
+        db.put(subject, refreshToken);
     }
 
     @Override
-    public void delete(String id, String refreshToken) {
-        db.remove(id, refreshToken);
+    public void delete(String subject, String refreshToken) {
+        db.remove(subject, refreshToken);
     }
 
     @Override
-    public void deleteById(String id) {
-        db.remove(id);
+    public void deleteBySubject(String subject) {
+        db.remove(subject);
     }
 
     @Override
@@ -30,8 +35,8 @@ public class MapRefreshTokenRepository implements RefreshTokenRepository<String,
     }
 
     @Override
-    public Optional<String> findById(String id) {
-        return Optional.ofNullable(db.get(id));
+    public Optional<String> findBySubject(String subject) {
+        return Optional.ofNullable(db.get(subject));
     }
 
     @Override

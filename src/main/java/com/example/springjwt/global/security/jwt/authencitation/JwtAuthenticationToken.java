@@ -1,10 +1,14 @@
-package com.example.springjwt.global.security.jwt;
+package com.example.springjwt.global.security.jwt.authencitation;
 
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 
+@Component
 public class JwtAuthenticationToken extends AbstractAuthenticationToken {
     private String accessToken;
     private Object principal;
@@ -21,6 +25,10 @@ public class JwtAuthenticationToken extends AbstractAuthenticationToken {
         this.principal = principal;
         this.credentials = credentials;
         super.setAuthenticated(true);
+    }
+
+    public JwtAuthenticationToken() {
+        super(null);
     }
 
     @Override

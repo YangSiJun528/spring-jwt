@@ -1,5 +1,7 @@
 package com.example.springjwt.global.security.jwt;
 
+import com.example.springjwt.global.security.jwt.data.JwtEnvironment;
+import com.example.springjwt.global.security.jwt.repository.RefreshTokenRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -15,37 +17,32 @@ import java.util.function.Function;
 public class JwtManager {
     private static final String ROLE = "roles";
     private final JwtEnvironment env;
+    private final RefreshTokenRepository tokenRepository;
 
-    /**
-     * 주어진 사용자 정보와 추가 클레임 정보를 이용하여 JWT access 토큰을 생성합니다.
-     *
-     * @param extraClaims JWT 토큰에 추가할 클레임 정보
-     * @param jwtData    JWT 토큰에 담을 사용자 정보
-     * @return 생성된 JWT 토큰
-     */
+
     public String generateAccessToken(
-            Map<String, Object> extraClaims,
             JwtData jwtData
     ) {
-        return buildToken(extraClaims, jwtData, env.accessExpiration());
+        return buildToken(jwtData.getAdditional(), jwtData, env.accessExpiration());
     }
 
-    /**
-     * 주어진 사용자 정보를 이용하여 JWT refresh 토큰을 생성합니다.
-     *
-     * @param jwtData JWT refresh 토큰에 담을 사용자 정보
-     * @return 생성된 JWT refresh 토큰
-     */
     public String generateRefreshToken(
             JwtData jwtData
     ) {
-        return buildToken(new HashMap<>(), jwtData, env.refreshExpiration());
+        String refreshToken = buildToken(Collections.emptyMap(), jwtData, env.refreshExpiration());
+        tokenRepository.save(jwtData.getSubject(), refreshToken);
+        return refreshToken;
     }
+
+    public void removeRefreshToken(
+            JwtData jwtData
+    ) {
+        tokenRepository.deleteBySubject(jwtData.getSubject());
+    }
+
 
     /**
      * 주어진 extraClaims, userDetails, expiration 정보를 이용해 JWT 토큰을 생성합니다.
-     *
-     * @param extraClaims JWT 토큰에 추가할 클레임 정보
      * @param jwtData    JWT 토큰에 저장할 사용자 정보
      * @param expiration  JWT 토큰의 만료 시간 (밀리초)
      * @return 생성된 JWT 토큰
@@ -60,12 +57,8 @@ public class JwtManager {
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .setSubject(jwtData.getSubject())
-                .claim(ROLE, jwtData.getRoles());
-
-        // extraClaims가 null이 아닌 경우 claims에 extraClaims를 추가합니다.
-        if (extraClaims != null) {
-            jwtBuilder = jwtBuilder.addClaims(extraClaims);
-        }
+                .claim(ROLE, jwtData.getRoles())
+                .addClaims(extraClaims);
 
         // 키와 알고리즘을 사용하여 JWT를 서명하고 컴팩트한 문자열 토큰을 반환합니다.
         return jwtBuilder.signWith(getSignInKey(), SignatureAlgorithm.HS256).compact();
@@ -78,7 +71,7 @@ public class JwtManager {
      * @return JWT 토큰에서 추출한 모든 클레임
      * @throws JwtException JWT 변환에 실패한 경우 발생
      */
-    private Claims extractAllClaims(String token) throws JwtException {
+    public Claims extractAllClaims(String token) throws JwtException {
         return Jwts.parserBuilder()
                 .requireIssuer(env.issuer())
                 .setSigningKey(getSignInKey())
@@ -151,4 +144,5 @@ public class JwtManager {
         // 디코딩된 키 바이트를 기반으로 새로운 HMAC-SHA 키 객체를 반환합니다.
         return Keys.hmacShaKeyFor(keyBytes);
     }
+
 }

@@ -1,7 +1,10 @@
-package com.example.springjwt.global.security.jwt;
+package com.example.springjwt.global.security.jwt.refresh;
 
-import com.example.springjwt.global.security.domain.user.entity.User;
-import com.example.springjwt.global.security.domain.user.service.UserService;
+import com.example.springjwt.global.security.jwt.JwtData;
+import com.example.springjwt.global.security.jwt.JwtDataService;
+import com.example.springjwt.global.security.jwt.data.JwtInvalidException;
+import com.example.springjwt.global.security.jwt.JwtManager;
+import com.example.springjwt.global.security.jwt.repository.RefreshTokenRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
@@ -13,28 +16,25 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
+@Component
 @RequiredArgsConstructor
 public class JwtRefreshFilter extends OncePerRequestFilter {
-    private final String ENDPOINT = "/api/auth/v1";
+    private final String ENDPOINT = "/api/auth/refresh";
 
     private final String TOKEN_VALUE = "refreshToken";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final JwtManager jwtManager;
-    private final RefreshTokenRepository tokenRepository;
     private final JwtDataService jwtDataService;
 
     @Override
@@ -49,11 +49,12 @@ public class JwtRefreshFilter extends OncePerRequestFilter {
         System.out.println("messageBody = " + messageBody);
 
         Map<String, Object> jsonBody = objectMapper.readValue(messageBody, Map.class);
-        String refreshToken = (String) jsonBody.get(TOKEN_VALUE); // TODO 이 부분 String 아닌 경우 예외처리
-        if (refreshToken == null) {
+        Object refreshTokenObj = jsonBody.get(TOKEN_VALUE);
+        if (refreshTokenObj == null || !(refreshTokenObj instanceof String)) {
             filterChain.doFilter(request, response);
             return;
         }
+        String refreshToken = (String) refreshTokenObj;
         JwtData jwtData = null;
         try {
             String subject = jwtManager.extractSubject(refreshToken);
@@ -67,7 +68,7 @@ public class JwtRefreshFilter extends OncePerRequestFilter {
         } catch (IllegalArgumentException illegalArgumentException) {
             throw new JwtInvalidException("null과 같은 잘못된 인수를 사용했습니다", illegalArgumentException);
         }
-        String newAccessToken = jwtManager.generateAccessToken(Collections.emptyMap(), jwtData);
+        String newAccessToken = jwtManager.generateAccessToken(jwtData);
         String newRefreshToken = jwtManager.generateRefreshToken(jwtData);
 
         response.setStatus(HttpServletResponse.SC_OK);
