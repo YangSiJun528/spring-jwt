@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Component
 @RequiredArgsConstructor
 public class MapRefreshTokenRepository implements RefreshTokenRepository<String, String> {
     Map<String, String> db = new HashMap<>(Collections.emptyMap());

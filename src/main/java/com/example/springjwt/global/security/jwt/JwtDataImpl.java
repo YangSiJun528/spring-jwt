@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@Component
 public class JwtDataImpl implements JwtData {
 
     User user;

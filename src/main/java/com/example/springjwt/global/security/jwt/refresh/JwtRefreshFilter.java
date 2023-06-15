@@ -40,7 +40,7 @@ public class JwtRefreshFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        if (request.getServletPath().contains(ENDPOINT) && !request.getMethod().equals("POST")) {
+        if (!request.getServletPath().contains(ENDPOINT) || !request.getMethod().equals("POST")) {
             filterChain.doFilter(request, response);
             return;
         }
